@@ -3,3 +3,7 @@
 docker run --rm -it -v "$(pwd)":/home/rust/src messense/rust-musl-cross:armv7-musleabihf cargo build --release
 
 docker run --rm -it -v "$(pwd)":/home/rust/src messense/rust-musl-cross:armv7-musleabihf musl-strip /home/rust/src/target/armv7-unknown-linux-musleabihf/release/github-device-flow
+
+docker run --rm -it -v "$(pwd)":/home/rust/src messense/rust-musl-cross:arm-musleabihf cargo build --release
+
+docker run --rm -it -v "$(pwd)":/home/rust/src messense/rust-musl-cross:arm-musleabihf musl-strip /home/rust/src/target/arm-unknown-linux-musleabihf/release/github-device-flow

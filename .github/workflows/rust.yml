@@ -24,20 +24,8 @@ jobs:
           target
         key: ${{ runner.os }}-1-cargo-${{ hashFiles('**/Cargo.lock') }}-${{ hashFiles('src/**.rs') }}
     - uses: actions/checkout@v3
-    - name: Install latest nightly
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        override: true
-        profile: minimal
-    - name: Install cross compilation dependencies
-      run: |
-        sudo apt update
-        sudo apt install gcc-arm-linux-gnueabihf musl musl-tools musl-dev
-    - name: Build ARM
-      run: cargo build --verbose --release --target arm-unknown-linux-musleabihf
-    - name: Build ARMv7
-      run: cargo build --verbose --release --target armv7-unknown-linux-musleabihf
+    - name: Build ARM releases
+      run: script/build-musl
     - name: Create release
       if: steps.cache-build.outputs.cache-hit != 'true'
       id: create_release
