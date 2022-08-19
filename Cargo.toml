@@ -2,6 +2,10 @@
 name = "github-device-flow"
 version = "0.1.0"
 edition = "2021"
+description = "Binary and library for performing the GitHub Device Flow"
+license = "MIT"
+exclude = ["/script"]
+repository = "https://github.com/jakewilkins/gh-device-flow"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
