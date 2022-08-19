@@ -39,7 +39,8 @@ fn main() {
    }
    match cred {
        Ok(cred) => {
-           println!("Your token is: {:?}", cred)
+           let json = serde_json::to_string_pretty(&cred).unwrap();
+           println!("{}", json)
        },
        Err(err) => {
            println!("Something went wrong: {:?}", err)
