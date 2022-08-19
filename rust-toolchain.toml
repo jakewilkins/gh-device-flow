@@ -1,0 +1,4 @@
+[toolchain]
+channel = "stable"
+targets = ["arm-unknown-linux-musleabihf", "armv7-unknown-linux-musleabihf"]
+profile = "minimal"
