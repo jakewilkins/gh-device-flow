@@ -195,7 +195,7 @@ fn calculate_expiry(expires_in: i64) -> String {
     expiry.to_rfc3339()
 }
 
-pub fn refresh_access_token(client_id: &str, refresh_token: &str, maybe_host: Option<&str>) -> Result<Credential, Box<dyn Error>> {
+fn refresh_access_token(client_id: &str, refresh_token: &str, maybe_host: Option<&str>) -> Result<Credential, Box<dyn Error>> {
     let host = match maybe_host {
         Some(string) => string,
         None => "github.com"
