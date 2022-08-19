@@ -1,0 +1,82 @@
+name: Rust
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Cache
+      uses: actions/cache@v3.0.7
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-1-cargo-${{ hashFiles('**/Cargo.lock') }}-${{ hashFiles('src/**.rs') }}
+    - uses: actions/checkout@v3
+    - name: Install latest nightly
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+        profile: minimal
+    - name: Install cross compilation dependencies
+      run: |
+        sudo apt update
+        sudo apt install gcc-arm-linux-gnueabihf musl musl-tools musl-dev
+    - name: Build ARM
+      run: cargo build --verbose --release --target arm-unknown-linux-musleabihf
+    - name: Build ARMv7
+      run: cargo build --verbose --release --target armv7-unknown-linux-musleabihf
+    - name: Create release
+      if: steps.cache-build.outputs.cache-hit != 'true'
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+      with:
+          tag_name: release-${{ github.sha }}
+          release_name: Release ${{ github.sha }}
+          body: |
+            Changes in this Release - Things.
+          draft: false
+          prerelease: false
+    - name: Compress release assets
+      if: steps.cache-build.outputs.cache-hit != 'true'
+      run: |
+          mv ./target/arm-unknown-linux-musleabihf/release/{door-subscriber,door-state} .
+          zip -9 door_opener.arm-unknown-linux-musleabihf.zip ./door-subscriber ./door-state
+          mv ./target/armv7-unknown-linux-musleabihf/release/{door-subscriber,door-state} .
+          zip -9 door_opener.armv7-unknown-linux-musleabihf.zip ./door-subscriber ./door-state
+    - name: Upload Release Asset ARM
+      if: steps.cache-build.outputs.cache-hit != 'true'
+      id: upload-release-asset-arm 
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./door_opener.arm-unknown-linux-musleabihf.zip
+          asset_name: door_opener.arm-unknown-linux-musleabihf.zip
+          asset_content_type: application/zip
+    - name: Upload Release Asset ARMv7
+      if: steps.cache-build.outputs.cache-hit != 'true'
+      id: upload-release-asset 
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./door_opener.armv7-unknown-linux-musleabihf.zip
+          asset_name: door_opener.armv7-unknown-linux-musleabihf.zip
+          asset_content_type: application/zip

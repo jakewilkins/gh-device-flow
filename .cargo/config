@@ -1,0 +1,7 @@
+[target.armv7-unknown-linux-musleabihf]
+linker = "arm-linux-gnueabihf-gcc"
+# gcc = "arm-linux-gnueabihf-gcc"
+# openssl = "0.10.41"
+
+[target.arm-unknown-linux-musleabihf]
+linker = "arm-linux-gnueabihf-ld"
