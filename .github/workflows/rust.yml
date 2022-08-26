@@ -42,10 +42,10 @@ jobs:
     - name: Compress release assets
       if: steps.cache-build.outputs.cache-hit != 'true'
       run: |
-          mv ./target/arm-unknown-linux-musleabihf/release/{door-subscriber,door-state} .
-          zip -9 door_opener.arm-unknown-linux-musleabihf.zip ./door-subscriber ./door-state
-          mv ./target/armv7-unknown-linux-musleabihf/release/{door-subscriber,door-state} .
-          zip -9 door_opener.armv7-unknown-linux-musleabihf.zip ./door-subscriber ./door-state
+          mv ./target/arm-unknown-linux-musleabihf/release/github-device-flow .
+          zip -9 gh-device-flow.arm-linux.zip ./github-device-flow
+          mv ./target/armv7-unknown-linux-musleabihf/release/github-device-flow .
+          zip -9 gh-device-flow.armv7-linux.zip ./github-device-flow
     - name: Upload Release Asset ARM
       if: steps.cache-build.outputs.cache-hit != 'true'
       id: upload-release-asset-arm
@@ -54,8 +54,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./door_opener.arm-unknown-linux-musleabihf.zip
-          asset_name: door_opener.arm-unknown-linux-musleabihf.zip
+          asset_path: ./gh-device-flow.arm-linux.zip
+          asset_name: gh-device-flow.arm-linux.zip
           asset_content_type: application/zip
     - name: Upload Release Asset ARMv7
       if: steps.cache-build.outputs.cache-hit != 'true'
@@ -65,6 +65,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./door_opener.armv7-unknown-linux-musleabihf.zip
-          asset_name: door_opener.armv7-unknown-linux-musleabihf.zip
+          asset_path: ./gh-device-flow.armv7-linux.zip
+          asset_name: gh-device-flow.armv7-linux.zip
           asset_content_type: application/zip
