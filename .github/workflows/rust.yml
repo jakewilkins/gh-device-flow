@@ -156,17 +156,22 @@ jobs:
           prerelease: false
     - name: Download all workflow run artifacts
       uses: actions/download-artifact@v3
-    - name: take a look
-      run: |
-        ls -larth
-        ls -larth *
+    - name: Upload Release Asset x86_641
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./gh-device-flow.x86_64-linux.zip/gh-device-flow.x86_64-linux.zip
+          asset_name: gh-device-flow.arm-linux.zip
+          asset_content_type: application/zip
     - name: Upload Release Asset ARM
       uses: actions/upload-release-asset@v1
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./gh-device-flow.arm-linux.zip
+          asset_path: ./gh-device-flow.arm-linux.zip/gh-device-flow.arm-linux.zip
           asset_name: gh-device-flow.arm-linux.zip
           asset_content_type: application/zip
     - name: Upload Release Asset ARMv7
@@ -175,7 +180,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./gh-device-flow.armv7-linux.zip
+          asset_path: ./gh-device-flow.armv7-linux.zip/gh-device-flow.armv7-linux.zip
           asset_name: gh-device-flow.armv7-linux.zip
           asset_content_type: application/zip
     - name: Upload Release Asset x86_64
@@ -184,7 +189,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./gh-device-flow.x86_64-linux.zip
+          asset_path: ./gh-device-flow.x86_64-linux.zip/gh-device-flow.x86_64-linux.zip
           asset_name: gh-device-flow.x86_64-linux.zip
           asset_content_type: application/zip
     - name: Upload Release Asset macos
@@ -193,6 +198,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./gh-device-flow.macos.zip
+          asset_path: ./gh-device-flow.macos.zip/gh-device-flow.macos.zip
           asset_name: gh-device-flow.macos.zip
           asset_content_type: application/zip
