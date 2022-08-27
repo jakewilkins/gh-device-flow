@@ -163,7 +163,7 @@ jobs:
       with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./gh-device-flow.x86_64-linux.zip/gh-device-flow.x86_64-linux.zip
-          asset_name: gh-device-flow.arm-linux.zip
+          asset_name: gh-device-flow.x86_64-linux.zip
           asset_content_type: application/zip
     - name: Upload Release Asset ARM
       uses: actions/upload-release-asset@v1
