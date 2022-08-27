@@ -95,19 +95,11 @@ jobs:
         run: |
           script/decode-64 MACOS_CERTIFICATE
           mv macos_certificate macos_certificate.p12
-          echo 1
           security create-keychain -p "$KEYCHAIN_PW" build.keychain
-          echo 2
           security default-keychain -s build.keychain
-          echo 3
           security unlock-keychain -p "$KEYCHAIN_PW" build.keychain
-          echo 4
           security import macos_certificate.p12 -k build.keychain -P "$MACOS_CERTIFICATE_PW" -T /usr/bin/codesign
-          echo 5
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PW" build.keychain
-          echo 6
-          ls -larth target/release
-          security find-identity -v
           /usr/bin/codesign --force -s "$IDENTITY_ID" ./target/release/github-device-flow -v
       - name: Compress release assets
         run: |
