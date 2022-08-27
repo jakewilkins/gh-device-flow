@@ -94,11 +94,11 @@ jobs:
         run: |
           script/decode-64 MACOS_CERTIFICATE
           mv macos_certificate macos_certificate.p12
-          security create-keychain -p $MACOS_CERTIFICATE_PW build.keychain
+          security create-keychain -p $MACOS_CERTIFICATE_PWD build.keychain
           security default-keychain -s build.keychain
-          security unlock-keychain -p $MACOS_CERTIFICATE_PW build.keychain
-          security import macos_certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PW -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k $MACOS_CERTIFICATE_PW build.keychain
+          security unlock-keychain -p $MACOS_CERTIFICATE_PWD build.keychain
+          security import macos_certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PWD -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k $MACOS_CERTIFICATE_PWD build.keychain
           sudo chown -R runner:docker ./target
           /usr/bin/codesign --force -s $IDENTITY_ID ./target/release/github-device-flow -v
       - name: Compress release assets
