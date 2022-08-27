@@ -106,7 +106,7 @@ jobs:
           echo 5
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PW" build.keychain
           echo 6
-          ls -larth
+          ls -larth target
           /usr/bin/codesign --force -s $IDENTITY_ID ./target/release/github-device-flow -v
       - name: Compress release assets
         run: |
