@@ -106,11 +106,11 @@ jobs:
           echo 5
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PW" build.keychain
           echo 6
-          sudo chown -R runner:docker ./target
+          ls -larth
+          sudo chown -R runner:runner ./target
           /usr/bin/codesign --force -s $IDENTITY_ID ./target/release/github-device-flow -v
       - name: Compress release assets
         run: |
-            sudo chown -R runner:docker ./target
             mv ./target/release/github-device-flow .
             zip -9 gh-device-flow.macos.zip ./github-device-flow
       - name: Archive code coverage results
