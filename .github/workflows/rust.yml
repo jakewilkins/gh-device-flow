@@ -10,6 +10,30 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  build_x86_64:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Cache
+      uses: actions/cache@v3.0.7
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-1-cargo-${{ hashFiles('**/Cargo.lock') }}-${{ hashFiles('src/**.rs') }}
+    - uses: actions/checkout@v3
+    - name: Build x86_64 releases
+      run: script/build-x86_64
+    - name: Compress release assets
+      run: |
+          sudo chown -R runner:docker ./target
+          mv ./target/x86_64-unknown-linux-musl/release/github-device-flow .
+          zip -9 gh-device-flow.x86_64-linux.zip ./github-device-flow
+    - name: Archive code coverage results
+      uses: actions/upload-artifact@v3
+      with:
+        name: gh-device-flow.x86_64-linux.zip
+        path: gh-device-flow.x86_64-linux.zip
   build_arm:
     runs-on: ubuntu-latest
     steps:
@@ -27,8 +51,6 @@ jobs:
     - name: Compress release assets
       run: |
           sudo chown -R runner:docker ./target
-          ls -larth .
-          ls -larth target
           mv ./target/arm-unknown-linux-musleabihf/release/github-device-flow .
           zip -9 gh-device-flow.arm-linux.zip ./github-device-flow
     - name: Archive code coverage results
@@ -53,8 +75,6 @@ jobs:
     - name: Compress release assets
       run: |
           sudo chown -R runner:docker ./target
-          ls -larth .
-          ls -larth target
           mv ./target/armv7-unknown-linux-musleabihf/release/github-device-flow .
           zip -9 gh-device-flow.armv7-linux.zip ./github-device-flow
     - name: Archive code coverage results
@@ -111,8 +131,8 @@ jobs:
           name: gh-device-flow.macos.zip
           path: gh-device-flow.macos.zip
   create_release:
-    runs-on: ubtuntu-latest
-    needs: [build_arm, build_armv7, build_macos]
+    runs-on: ubuntu-latest
+    needs: [build_arm, build_armv7, build_macos, build_x86_64]
     steps:
     - name: Create release
       uses: actions/create-release@v1
@@ -144,6 +164,15 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./gh-device-flow.armv7-linux.zip
           asset_name: gh-device-flow.armv7-linux.zip
+          asset_content_type: application/zip
+    - name: Upload Release Asset x86_64
+      uses: actions/upload-release-asset@v1
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./gh-device-flow.x86_64-linux.zip
+          asset_name: gh-device-flow.x86_64-linux.zip
           asset_content_type: application/zip
     - name: Upload Release Asset macos
       uses: actions/upload-release-asset@v1
