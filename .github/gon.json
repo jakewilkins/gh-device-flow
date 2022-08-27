@@ -1,0 +1,13 @@
+{
+    "source" : ["./github-device-flow"],
+    "bundle_id" : "com.jakewilkins.github-device-flow",
+    "apple_id": {
+        "password":  "@env:AC_PASSWORD"
+    },
+    "sign" :{
+        "application_identity" : "953B573CC1A995DAC89C59C3FFEA57E8037056DD"
+    },
+    "zip" :{
+        "output_path" : "gh-device-flow.macos.zip"
+    }
+}
