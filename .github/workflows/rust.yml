@@ -27,8 +27,10 @@ jobs:
     - name: Compress release assets
       run: |
           sudo chown -R runner:docker ./target
-          mv ./target/x86_64-unknown-linux-musl/release/github-device-flow .
+          pushd ./target/x86_64-unknown-linux-musl/release/
           zip -9 gh-device-flow.x86_64-linux.zip ./github-device-flow
+          popd
+          mv ./target/x86_64-unknown-linux-musl/release//gh-device-flow.x86_64-linux.zip .
     - name: Upload compiled artifact
       uses: actions/upload-artifact@v3
       with:
@@ -51,8 +53,10 @@ jobs:
     - name: Compress release assets
       run: |
           sudo chown -R runner:docker ./target
-          mv ./target/arm-unknown-linux-musleabihf/release/github-device-flow .
+          pushd ./target/arm-unknown-linux-musleabihf/release/
           zip -9 gh-device-flow.arm-linux.zip ./github-device-flow
+          popd
+          mv ./target/arm-unknown-linux-musleabihf/release/gh-device-flow.arm-linux.zip .
     - name: Upload compiled artifact
       uses: actions/upload-artifact@v3
       with:
@@ -75,8 +79,10 @@ jobs:
     - name: Compress release assets
       run: |
           sudo chown -R runner:docker ./target
-          mv ./target/armv7-unknown-linux-musleabihf/release/github-device-flow .
+          pushd ./target/armv7-unknown-linux-musleabihf/release/
           zip -9 gh-device-flow.armv7-linux.zip ./github-device-flow
+          popd
+          mv ./target/armv7-unknown-linux-musleabihf/release/gh-device-flow.armv7-linux.zip .
     - name: Upload compiled artifact
       uses: actions/upload-artifact@v3
       with:
