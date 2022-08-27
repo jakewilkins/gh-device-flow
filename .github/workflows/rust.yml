@@ -135,6 +135,7 @@ jobs:
     needs: [build_arm, build_armv7, build_macos, build_x86_64]
     steps:
     - name: Create release
+      id: create_release
       uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
