@@ -156,7 +156,7 @@ jobs:
           prerelease: false
     - name: Download all workflow run artifacts
       uses: actions/download-artifact@v3
-    - name: Upload Release Asset x86_641
+    - name: Upload Release Asset x86_64
       uses: actions/upload-release-asset@v1
       env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -182,15 +182,6 @@ jobs:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./gh-device-flow.armv7-linux.zip/gh-device-flow.armv7-linux.zip
           asset_name: gh-device-flow.armv7-linux.zip
-          asset_content_type: application/zip
-    - name: Upload Release Asset x86_64
-      uses: actions/upload-release-asset@v1
-      env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./gh-device-flow.x86_64-linux.zip/gh-device-flow.x86_64-linux.zip
-          asset_name: gh-device-flow.x86_64-linux.zip
           asset_content_type: application/zip
     - name: Upload Release Asset macos
       uses: actions/upload-release-asset@v1
