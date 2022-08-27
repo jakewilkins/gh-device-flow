@@ -26,6 +26,7 @@ jobs:
       run: script/build-arm
     - name: Compress release assets
       run: |
+          sudo chown -R runner:docker ./target
           ls -larth .
           ls -larth target
           mv ./target/arm-unknown-linux-musleabihf/release/github-device-flow .
@@ -51,6 +52,7 @@ jobs:
       run: script/build-armv7
     - name: Compress release assets
       run: |
+          sudo chown -R runner:docker ./target
           ls -larth .
           ls -larth target
           mv ./target/armv7-unknown-linux-musleabihf/release/github-device-flow .
@@ -84,10 +86,23 @@ jobs:
         with:
           command: build
           args: --release
+      - name: Codesign executable
+        env:
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+          MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+          IDENTITY_ID: ${{ secrets.IDENTITY_ID }}
+        run: |
+          echo $MACOS_CERTIFICATE | base64 —decode > certificate.p12
+          security create-keychain -p $MACOS_CERTIFICATE_PWD build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p $MACOS_CERTIFICATE_PWD build.keychain
+          security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PWD -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k $MACOS_CERTIFICATE_PWD build.keychain
+          sudo chown -R runner:docker ./target
+          /usr/bin/codesign --force -s $IDENTITY_ID ./target/release/github-device-flow -v
       - name: Compress release assets
         run: |
-            ls -larth .
-            ls -larth target
+            sudo chown -R runner:docker ./target
             mv ./target/release/github-device-flow .
             zip -9 gh-device-flow.macos.zip ./github-device-flow
       - name: Archive code coverage results
