@@ -156,6 +156,10 @@ jobs:
           prerelease: false
     - name: Download all workflow run artifacts
       uses: actions/download-artifact@v3
+    - name: take a look
+      run: |
+        ls -larth
+        ls -larth *
     - name: Upload Release Asset ARM
       uses: actions/upload-release-asset@v1
       env:
