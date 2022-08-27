@@ -29,7 +29,7 @@ jobs:
           sudo chown -R runner:docker ./target
           mv ./target/x86_64-unknown-linux-musl/release/github-device-flow .
           zip -9 gh-device-flow.x86_64-linux.zip ./github-device-flow
-    - name: Archive code coverage results
+    - name: Upload compiled artifact
       uses: actions/upload-artifact@v3
       with:
         name: gh-device-flow.x86_64-linux.zip
@@ -53,7 +53,7 @@ jobs:
           sudo chown -R runner:docker ./target
           mv ./target/arm-unknown-linux-musleabihf/release/github-device-flow .
           zip -9 gh-device-flow.arm-linux.zip ./github-device-flow
-    - name: Archive code coverage results
+    - name: Upload compiled artifact
       uses: actions/upload-artifact@v3
       with:
         name: gh-device-flow.arm-linux.zip
@@ -77,7 +77,7 @@ jobs:
           sudo chown -R runner:docker ./target
           mv ./target/armv7-unknown-linux-musleabihf/release/github-device-flow .
           zip -9 gh-device-flow.armv7-linux.zip ./github-device-flow
-    - name: Archive code coverage results
+    - name: Upload compiled artifact
       uses: actions/upload-artifact@v3
       with:
         name: gh-device-flow.armv7-linux.zip
@@ -106,7 +106,6 @@ jobs:
         with:
           command: build
           args: --release
-
       - name: Import Code-Signing Certificates
         uses: Apple-Actions/import-codesign-certs@v1
         with:
@@ -119,17 +118,16 @@ jobs:
         run: |
           brew tap mitchellh/gon
           brew install mitchellh/gon/gon
+      - name: Move asset
+        run: |
+            mv ./target/release/github-device-flow .
       - name: Sign the mac binaries with Gon
         env:
           AC_USERNAME: ${{ secrets.AC_USERNAME }}
           AC_PASSWORD: ${{ secrets.AC_PASSWORD }}
         run: |
           gon -log-level=debug -log-json ./.github/gon.json
-      - name: Compress release assets
-        run: |
-            mv ./target/release/github-device-flow .
-            zip -9 gh-device-flow.macos.zip ./github-device-flow
-      - name: Archive code coverage results
+      - name: Upload compiled artifact
         uses: actions/upload-artifact@v3
         with:
           name: gh-device-flow.macos.zip
