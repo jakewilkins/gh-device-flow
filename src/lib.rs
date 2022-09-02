@@ -1,5 +1,5 @@
 
-use std::{result::Result, thread, time, fmt, error::Error};
+use std::{result::Result, thread, time, fmt};
 use std::collections::HashMap;
 
 use chrono::{DateTime, Duration};
@@ -33,18 +33,31 @@ impl Credential {
     }
 }
 
+
 #[derive(Debug)]
-pub struct DeviceFlowError(pub String);
+pub enum DeviceFlowError {
+  HttpError(String),
+  GitHubError(String),
+}
+
 impl fmt::Display for DeviceFlowError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.0)
+        match self {
+            DeviceFlowError::HttpError(string) => write!(f, "DeviceFlowError: {}", string),
+            DeviceFlowError::GitHubError(string) => write!(f, "DeviceFlowError: {}", string)
+        }
     }
 }
 
 impl std::error::Error for DeviceFlowError {}
 
+impl From<reqwest::Error> for DeviceFlowError {
+    fn from(e: reqwest::Error) -> Self {
+        DeviceFlowError::HttpError(format!("{:?}", e))
+    }
+}
 
-pub fn authorize(client_id: String, host: Option<String>) -> Result<Credential, Box<dyn Error>> {
+pub fn authorize(client_id: String, host: Option<String>) -> Result<Credential, DeviceFlowError> {
     let my_string: String;
     let thost = match host {
         Some(string) => {
@@ -65,7 +78,7 @@ pub fn authorize(client_id: String, host: Option<String>) -> Result<Credential, 
     flow.poll()
 }
 
-pub fn refresh(client_id: &str, refresh_token: &str, host: Option<String>) -> Result<Credential, Box<dyn Error>> {
+pub fn refresh(client_id: &str, refresh_token: &str, host: Option<String>) -> Result<Credential, DeviceFlowError> {
     let my_string: String;
     let thost = match host {
         Some(string) => {
@@ -103,7 +116,7 @@ impl DeviceFlow {
         }
     }
 
-    pub fn start(client_id: &str, maybe_host: Option<&str>) -> Result<DeviceFlow, Box<dyn Error>> {
+    pub fn start(client_id: &str, maybe_host: Option<&str>) -> Result<DeviceFlow, DeviceFlowError> {
         let mut flow = DeviceFlow::new(client_id, maybe_host);
         match flow.setup() {
             Ok(flow) => Ok(flow.to_owned()),
@@ -111,7 +124,7 @@ impl DeviceFlow {
         }
     }
 
-    pub fn setup(&mut self) -> Result<DeviceFlow, Box<dyn Error>> {
+    pub fn setup(&mut self) -> Result<DeviceFlow, DeviceFlowError> {
         let client = reqwest::blocking::Client::new();
         let entry_url = format!("https://{}/login/device/code", &self.host);
 
@@ -122,9 +135,9 @@ impl DeviceFlow {
             .json::<HashMap<String, serde_json::Value>>()?;
 
         if res.contains_key("error") && res.contains_key("error_description"){
-            return Err(util::credential_error(res["error_description"].as_str().unwrap()))
+            return Err(util::credential_error(res["error_description"].as_str().unwrap().into()))
         } else if res.contains_key("error") {
-            return Err(util::credential_error(format!("Error response: {:?}", res["error"].as_str().unwrap()).as_str()))
+            return Err(util::credential_error(format!("Error response: {:?}", res["error"].as_str().unwrap())))
         } else {
             self.user_code = Some(String::from(res["user_code"].as_str().unwrap()));
             self.device_code = Some(String::from(res["device_code"].as_str().unwrap()));
@@ -133,7 +146,7 @@ impl DeviceFlow {
         }
     }
 
-    pub fn poll(&mut self) -> Result<Credential, Box<dyn Error>> {
+    pub fn poll(&mut self) -> Result<Credential, DeviceFlowError> {
         let mut count = 0u32;
         let mut credential: Option<Credential> = None;
         let client = reqwest::blocking::Client::new();
@@ -156,7 +169,7 @@ impl DeviceFlow {
                     "authorization_pending" => {},
                     "slow_down" => thread::sleep(FIVE_SECONDS),
                     other_reason => {
-                        return Err(util::credential_error(format!("Error checking for token: {}", other_reason).as_str()))
+                        return Err(util::credential_error(format!("Error checking for token: {}", other_reason)))
                     },
                 }
             } else {
@@ -183,7 +196,7 @@ impl DeviceFlow {
 
         match credential {
             Some(cred) => Ok(cred),
-            None => Err(util::credential_error("Unable to fetch credential, sorry :/"))
+            None => Err(util::credential_error("Unable to fetch credential, sorry :/".into()))
         }
     }
 }
@@ -195,7 +208,7 @@ fn calculate_expiry(expires_in: i64) -> String {
     expiry.to_rfc3339()
 }
 
-fn refresh_access_token(client_id: &str, refresh_token: &str, maybe_host: Option<&str>) -> Result<Credential, Box<dyn Error>> {
+fn refresh_access_token(client_id: &str, refresh_token: &str, maybe_host: Option<&str>) -> Result<Credential, DeviceFlowError> {
     let host = match maybe_host {
         Some(string) => string,
         None => "github.com"
@@ -213,7 +226,7 @@ fn refresh_access_token(client_id: &str, refresh_token: &str, maybe_host: Option
         .json::<HashMap<String, serde_json::Value>>()?;
 
     if res.contains_key("error") {
-        Err(util::credential_error(res["error"].as_str().unwrap()))
+        Err(util::credential_error(res["error"].as_str().unwrap().into()))
     } else {
         let mut credential = Credential::empty();
         // eprintln!("res: {:?}", &res);

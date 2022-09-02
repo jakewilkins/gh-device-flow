@@ -4,9 +4,7 @@ extern crate clap;
 
 use clap::Parser;
 
-use std::error::Error;
-
-use github_device_flow::{authorize, refresh, Credential};
+use github_device_flow::{authorize, refresh, Credential, DeviceFlowError};
 
 /// GitHub Device Flow Authorizer
 #[derive(Parser, Debug)]
@@ -27,7 +25,7 @@ struct Args {
 
 fn main() {
    let args = Args::parse();
-   let cred: Result<Credential, Box<dyn Error>>;
+   let cred: Result<Credential, DeviceFlowError>;
 
    match args.refresh {
        None => {
