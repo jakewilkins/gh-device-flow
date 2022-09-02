@@ -214,6 +214,48 @@ impl DeviceFlow {
             None => Err(util::credential_error("Unable to fetch credential, sorry :/".into()))
         }
     }
+
+    pub fn update(&mut self) {
+        let poll_url = format!("https://{}/login/oauth/access_token", self.host);
+        let poll_payload = format!("client_id={}&device_code={}&grant_type=urn:ietf:params:oauth:grant-type:device_code",
+            self.client_id,
+            &self.device_code.clone().unwrap()
+        );
+        let maybe_res = util::send_request(self, poll_url, poll_payload);
+
+        match maybe_res {
+            Some(res) => {
+                if res.contains_key("error") {
+                    match res["error"].as_str().unwrap() {
+                        "authorization_pending" => {},
+                        "slow_down" => {
+                            if let DeviceFlowState::Processing(current_interval) = self.state {
+                                self.state = DeviceFlowState::Processing(current_interval + FIVE_SECONDS);
+                            }
+                        },
+                        other_reason => {
+                            self.state = DeviceFlowState::Failure(
+                                util::credential_error(format!("Error checking for token: {}", other_reason))
+                            );
+                        },
+                    }
+                } else {
+                    let mut this_credential = Credential::empty();
+                    this_credential.token = res["access_token"].as_str().unwrap().to_string();
+
+                    match res.get("expires_in") {
+                        Some(expires_in) => {
+                            this_credential.expiry = calculate_expiry(expires_in.as_i64().unwrap());
+                            this_credential.refresh_token = res["refresh_token"].as_str().unwrap().to_string();
+                        },
+                        None => {}
+                    }
+                    self.state = DeviceFlowState::Success(this_credential);
+                }
+            },
+            None => {}
+        }
+    }
 }
 
 fn calculate_expiry(expires_in: i64) -> String {
