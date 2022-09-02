@@ -139,40 +139,25 @@ impl DeviceFlow {
     }
 
     pub fn setup(&mut self) {
-        let client = reqwest::blocking::Client::new();
+        let body = format!("client_id={}", &self.client_id);
         let entry_url = format!("https://{}/login/device/code", &self.host);
-        let res: HashMap<String, serde_json::Value>;
 
-        let response_struct = client.post(&entry_url)
-            .header("Accept", "application/json")
-            .body(format!("client_id={}", &self.client_id))
-            .send();
+        let res_opt = util::send_request(self, entry_url, body);
 
-        match response_struct {
-            Ok(resp) => {
-                match resp.json::<HashMap<String, serde_json::Value>>() {
-                    Ok(hm) => res = hm,
-                    Err(err) => {
-                        self.state = DeviceFlowState::Failure(err.into());
-                        return
-                    }
+        match res_opt {
+            Some(res) => {
+                if res.contains_key("error") && res.contains_key("error_description"){
+                    self.state = DeviceFlowState::Failure(util::credential_error(res["error_description"].as_str().unwrap().into()))
+                } else if res.contains_key("error") {
+                     self.state = DeviceFlowState::Failure(util::credential_error(format!("Error response: {:?}", res["error"].as_str().unwrap())))
+                } else {
+                    self.user_code = Some(String::from(res["user_code"].as_str().unwrap()));
+                    self.device_code = Some(String::from(res["device_code"].as_str().unwrap()));
+                    self.verification_uri = Some(String::from(res["verification_uri"].as_str().unwrap()));
+                    self.state = DeviceFlowState::Processing(FIVE_SECONDS);
                 }
             },
-            Err(err) => {
-                self.state = DeviceFlowState::Failure(err.into());
-                return
-            }
-        }
-
-        if res.contains_key("error") && res.contains_key("error_description"){
-            self.state = DeviceFlowState::Failure(util::credential_error(res["error_description"].as_str().unwrap().into()))
-        } else if res.contains_key("error") {
-             self.state = DeviceFlowState::Failure(util::credential_error(format!("Error response: {:?}", res["error"].as_str().unwrap())))
-        } else {
-            self.user_code = Some(String::from(res["user_code"].as_str().unwrap()));
-            self.device_code = Some(String::from(res["device_code"].as_str().unwrap()));
-            self.verification_uri = Some(String::from(res["verification_uri"].as_str().unwrap()));
-            self.state = DeviceFlowState::Processing(FIVE_SECONDS);
+            None => {}
         }
     }
 
