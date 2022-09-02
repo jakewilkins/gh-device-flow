@@ -34,7 +34,7 @@ impl Credential {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum DeviceFlowError {
   HttpError(String),
   GitHubError(String),
@@ -91,6 +91,14 @@ pub fn refresh(client_id: &str, refresh_token: &str, host: Option<String>) -> Re
     refresh_access_token(client_id, refresh_token, thost)
 }
 
+#[derive(Debug, Clone)]
+pub enum DeviceFlowState {
+    Pending,
+    Processing(time::Duration),
+    Success(Credential),
+    Failure(DeviceFlowError)
+}
+
 #[derive(Clone)]
 pub struct DeviceFlow {
     pub host: String,
@@ -98,6 +106,7 @@ pub struct DeviceFlow {
     pub user_code: Option<String>,
     pub device_code: Option<String>,
     pub verification_uri: Option<String>,
+    pub state: DeviceFlowState,
 }
 
 const FIVE_SECONDS: time::Duration = time::Duration::new(5, 0);
@@ -113,36 +122,57 @@ impl DeviceFlow {
             user_code: None,
             device_code: None,
             verification_uri: None,
+            state: DeviceFlowState::Pending,
         }
     }
 
     pub fn start(client_id: &str, maybe_host: Option<&str>) -> Result<DeviceFlow, DeviceFlowError> {
         let mut flow = DeviceFlow::new(client_id, maybe_host);
-        match flow.setup() {
-            Ok(flow) => Ok(flow.to_owned()),
-            Err(err) => Err(err)
+
+        flow.setup();
+
+        match flow.state {
+            DeviceFlowState::Processing(_) => Ok(flow.to_owned()),
+            DeviceFlowState::Failure(err) => Err(err),
+            _ => Err(util::credential_error("Something truly unexpected happened".into()))
         }
     }
 
-    pub fn setup(&mut self) -> Result<DeviceFlow, DeviceFlowError> {
+    pub fn setup(&mut self) {
         let client = reqwest::blocking::Client::new();
         let entry_url = format!("https://{}/login/device/code", &self.host);
+        let res: HashMap<String, serde_json::Value>;
 
-        let res = client.post(&entry_url)
+        let response_struct = client.post(&entry_url)
             .header("Accept", "application/json")
             .body(format!("client_id={}", &self.client_id))
-            .send()?
-            .json::<HashMap<String, serde_json::Value>>()?;
+            .send();
+
+        match response_struct {
+            Ok(resp) => {
+                match resp.json::<HashMap<String, serde_json::Value>>() {
+                    Ok(hm) => res = hm,
+                    Err(err) => {
+                        self.state = DeviceFlowState::Failure(err.into());
+                        return
+                    }
+                }
+            },
+            Err(err) => {
+                self.state = DeviceFlowState::Failure(err.into());
+                return
+            }
+        }
 
         if res.contains_key("error") && res.contains_key("error_description"){
-            return Err(util::credential_error(res["error_description"].as_str().unwrap().into()))
+            self.state = DeviceFlowState::Failure(util::credential_error(res["error_description"].as_str().unwrap().into()))
         } else if res.contains_key("error") {
-            return Err(util::credential_error(format!("Error response: {:?}", res["error"].as_str().unwrap())))
+             self.state = DeviceFlowState::Failure(util::credential_error(format!("Error response: {:?}", res["error"].as_str().unwrap())))
         } else {
             self.user_code = Some(String::from(res["user_code"].as_str().unwrap()));
             self.device_code = Some(String::from(res["device_code"].as_str().unwrap()));
             self.verification_uri = Some(String::from(res["verification_uri"].as_str().unwrap()));
-            Ok(self.to_owned())
+            self.state = DeviceFlowState::Processing(FIVE_SECONDS);
         }
     }
 
