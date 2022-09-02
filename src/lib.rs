@@ -75,7 +75,7 @@ pub fn authorize(client_id: String, host: Option<String>) -> Result<Credential, 
 
     thread::sleep(FIVE_SECONDS);
 
-    flow.poll()
+    flow.poll(20)
 }
 
 pub fn refresh(client_id: &str, refresh_token: &str, host: Option<String>) -> Result<Credential, DeviceFlowError> {
@@ -161,57 +161,28 @@ impl DeviceFlow {
         }
     }
 
-    pub fn poll(&mut self) -> Result<Credential, DeviceFlowError> {
+    pub fn poll(&mut self, iterations: u32) -> Result<Credential, DeviceFlowError> {
         let mut count = 0u32;
-        let mut credential: Option<Credential> = None;
-        let client = reqwest::blocking::Client::new();
-        let poll_url = format!("https://{}/login/oauth/access_token", self.host);
-        let poll_payload = format!("client_id={}&device_code={}&grant_type=urn:ietf:params:oauth:grant-type:device_code",
-            self.client_id,
-            &self.device_code.clone().unwrap()
-        );
 
         loop {
             count += 1;
-            let res = client.post(&poll_url)
-                .header("Accept", "application/json")
-                .body(poll_payload.clone())
-                .send()?
-                .json::<HashMap<String, serde_json::Value>>()?;
+            self.update();
 
-            if res.contains_key("error") {
-                match res["error"].as_str().unwrap() {
-                    "authorization_pending" => {},
-                    "slow_down" => thread::sleep(FIVE_SECONDS),
-                    other_reason => {
-                        return Err(util::credential_error(format!("Error checking for token: {}", other_reason)))
-                    },
+            if let DeviceFlowState::Processing(interval) = self.state {
+                if count > iterations {
+                    return Err(util::credential_error("Max poll iterations reached".into()))
                 }
+
+                thread::sleep(interval);
             } else {
-                let mut this_credential = Credential::empty();
-                this_credential.token = res["access_token"].as_str().unwrap().to_string();
-
-                match res.get("expires_in") {
-                    Some(expires_in) => {
-                        this_credential.expiry = calculate_expiry(expires_in.as_i64().unwrap());
-                        this_credential.refresh_token = res["refresh_token"].as_str().unwrap().to_string();
-                    },
-                    None => {}
-                }
-                credential = Some(this_credential);
-
                 break
             }
-
-            if count > 20 {
-                break
-            }
-            thread::sleep(FIVE_SECONDS);
         };
 
-        match credential {
-            Some(cred) => Ok(cred),
-            None => Err(util::credential_error("Unable to fetch credential, sorry :/".into()))
+        match &self.state {
+            DeviceFlowState::Success(cred) => Ok(cred.to_owned()),
+            DeviceFlowState::Failure(err) => Err(err.to_owned()),
+            _ => Err(util::credential_error("Unable to fetch credential, sorry :/".into()))
         }
     }
 
