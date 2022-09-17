@@ -157,14 +157,11 @@ impl DeviceFlow {
     }
 
     pub fn poll(&mut self, iterations: u32) -> Result<Credential, DeviceFlowError> {
-        let mut count = 0u32;
-
-        loop {
-            count += 1;
+        for count in 0..iterations {
             self.update();
 
             if let DeviceFlowState::Processing(interval) = self.state {
-                if count > iterations {
+                if count == iterations {
                     return Err(util::credential_error("Max poll iterations reached".into()))
                 }
 
