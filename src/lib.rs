@@ -142,23 +142,18 @@ impl DeviceFlow {
         let body = format!("client_id={}", &self.client_id);
         let entry_url = format!("https://{}/login/device/code", &self.host);
 
-        let res_opt = util::send_request(self, entry_url, body);
-
-        match res_opt {
-            Some(res) => {
-                if res.contains_key("error") && res.contains_key("error_description"){
-                    self.state = DeviceFlowState::Failure(util::credential_error(res["error_description"].as_str().unwrap().into()))
-                } else if res.contains_key("error") {
-                     self.state = DeviceFlowState::Failure(util::credential_error(format!("Error response: {:?}", res["error"].as_str().unwrap())))
-                } else {
-                    self.user_code = Some(String::from(res["user_code"].as_str().unwrap()));
-                    self.device_code = Some(String::from(res["device_code"].as_str().unwrap()));
-                    self.verification_uri = Some(String::from(res["verification_uri"].as_str().unwrap()));
-                    self.state = DeviceFlowState::Processing(FIVE_SECONDS);
-                }
-            },
-            None => {}
-        }
+        if let Some(res) = util::send_request(self, entry_url, body) {
+            if res.contains_key("error") && res.contains_key("error_description"){
+                self.state = DeviceFlowState::Failure(util::credential_error(res["error_description"].as_str().unwrap().into()))
+            } else if res.contains_key("error") {
+                 self.state = DeviceFlowState::Failure(util::credential_error(format!("Error response: {:?}", res["error"].as_str().unwrap())))
+            } else {
+                self.user_code = Some(String::from(res["user_code"].as_str().unwrap()));
+                self.device_code = Some(String::from(res["device_code"].as_str().unwrap()));
+                self.verification_uri = Some(String::from(res["verification_uri"].as_str().unwrap()));
+                self.state = DeviceFlowState::Processing(FIVE_SECONDS);
+            }
+        };
     }
 
     pub fn poll(&mut self, iterations: u32) -> Result<Credential, DeviceFlowError> {
@@ -254,13 +249,11 @@ fn refresh_access_token(client_id: &str, refresh_token: &str, maybe_host: Option
         // eprintln!("res: {:?}", &res);
         credential.token = res["access_token"].as_str().unwrap().to_string();
 
-        match res.get("expires_in") {
-            Some(expires_in) => {
-                credential.expiry = calculate_expiry(expires_in.as_i64().unwrap());
-                credential.refresh_token = res["refresh_token"].as_str().unwrap().to_string();
-            },
-            None => {}
+        if let Some(expires_in) = res.get("expires_in") {
+            credential.expiry = calculate_expiry(expires_in.as_i64().unwrap());
+            credential.refresh_token = res["refresh_token"].as_str().unwrap().to_string();
         }
+
         Ok(credential.clone())
     }
 }
