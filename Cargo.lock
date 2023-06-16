@@ -259,7 +259,7 @@ dependencies = [
 
 [[package]]
 name = "github-device-flow"
-version = "0.1.3"
+version = "0.1.4"
 dependencies = [
  "chrono",
  "clap",
