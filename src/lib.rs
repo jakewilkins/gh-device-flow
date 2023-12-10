@@ -57,7 +57,7 @@ impl From<reqwest::Error> for DeviceFlowError {
     }
 }
 
-pub fn authorize(client_id: String, host: Option<String>) -> Result<Credential, DeviceFlowError> {
+pub fn authorize(client_id: String, host: Option<String>, scope: Option<String>) -> Result<Credential, DeviceFlowError> {
     let my_string: String;
     let thost = match host {
         Some(string) => {
@@ -67,7 +67,18 @@ pub fn authorize(client_id: String, host: Option<String>) -> Result<Credential, 
         None => None
     };
 
-    let mut flow = DeviceFlow::start(client_id.as_str(), thost)?;
+
+    let binding: String;
+    let tscope = match scope {
+        Some(string) => {
+            binding = string;
+            Some(binding.as_str())
+        },
+        None => None
+    };
+
+    
+    let mut flow = DeviceFlow::start(client_id.as_str(), thost, tscope)?;
 
     // eprintln!("res is {:?}", res);
     eprintln!("Please visit {} in your browser", flow.verification_uri.clone().unwrap());
@@ -103,6 +114,7 @@ pub enum DeviceFlowState {
 pub struct DeviceFlow {
     pub host: String,
     pub client_id: String,
+    pub scope: String,
     pub user_code: Option<String>,
     pub device_code: Option<String>,
     pub verification_uri: Option<String>,
@@ -112,9 +124,13 @@ pub struct DeviceFlow {
 const FIVE_SECONDS: time::Duration = time::Duration::new(5, 0);
 
 impl DeviceFlow {
-    pub fn new(client_id: &str, maybe_host: Option<&str>) -> Self {
+    pub fn new(client_id: &str, maybe_host: Option<&str>, scope: Option<&str>) -> Self {
         Self{
             client_id: String::from(client_id),
+            scope: match scope {
+                Some(string) => String::from(string),
+                None => String::new()
+            },
             host: match maybe_host {
                 Some(string) => String::from(string),
                 None => String::from("github.com")
@@ -126,8 +142,8 @@ impl DeviceFlow {
         }
     }
 
-    pub fn start(client_id: &str, maybe_host: Option<&str>) -> Result<DeviceFlow, DeviceFlowError> {
-        let mut flow = DeviceFlow::new(client_id, maybe_host);
+    pub fn start(client_id: &str, maybe_host: Option<&str>, scope: Option<&str>) -> Result<DeviceFlow, DeviceFlowError> {
+        let mut flow = DeviceFlow::new(client_id, maybe_host, scope);
 
         flow.setup();
 
@@ -139,7 +155,7 @@ impl DeviceFlow {
     }
 
     pub fn setup(&mut self) {
-        let body = format!("client_id={}", &self.client_id);
+        let body = format!("client_id={}&scope={}", &self.client_id, &self.scope);
         let entry_url = format!("https://{}/login/device/code", &self.host);
 
         if let Some(res) = util::send_request(self, entry_url, body) {
