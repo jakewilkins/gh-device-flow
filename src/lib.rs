@@ -7,7 +7,7 @@ use chrono::offset::Utc;
 
 mod util;
 
-#[derive(Debug, Default, Clone, serde_derive::Serialize)]
+#[derive(Debug, Default, Clone, serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct Credential {
     pub token: String,
     pub expiry: String,
