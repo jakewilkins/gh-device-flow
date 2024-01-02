@@ -40,5 +40,6 @@ OPTIONS:
     -h, --host <HOST>              The host to authenticate with
         --help                     Print help information
     -r, --refresh <REFRESH>        A Refresh Token to exchange
+    -s, --scope <SCOPE>            The scope required for the auth app
     -V, --version                  Print version information
 ```
