@@ -10,7 +10,7 @@ repository = "https://github.com/jakewilkins/gh-device-flow"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-reqwest = { version = "0.11", features = ["blocking", "json", "rustls-tls"] }
+reqwest = { version = "0.11", features = ["blocking", "json"] }
 chrono = "0.4.26"
 serde = "1.0.143"
 serde_derive = "1.0.143"
