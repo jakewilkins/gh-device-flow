@@ -18,6 +18,10 @@ struct Args {
    #[clap(short, long, value_parser)]
    host: Option<String>,
 
+   /// The scope the user wants to have
+   #[clap(short, long, value_parser)]
+   scope: Option<String>,
+
    /// A Refresh Token to exchange
    #[clap(short, long, value_parser)]
    refresh: Option<String>,
@@ -29,10 +33,10 @@ fn main() {
 
    match args.refresh {
        None => {
-           cred = authorize(args.client_id, args.host);
+           cred = authorize(args.client_id, args.host, args.scope);
        },
        Some(rt) => {
-           cred = refresh(args.client_id.as_str(), rt.as_str(), args.host);
+           cred = refresh(args.client_id.as_str(), rt.as_str(), args.host, args.scope);
        }
    }
    match cred {
