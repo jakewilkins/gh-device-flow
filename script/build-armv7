@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source ./script/arm-tools.sh
+source ./script/openssl-dep-tools.sh
 
 trap reset EXIT
 

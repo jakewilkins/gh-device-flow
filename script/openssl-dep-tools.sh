@@ -7,7 +7,7 @@ function reset() {
 	echo "Exiting"
 	if [ -f ./Cargo.bak ]; then
 		echo "Resetting Cargo.toml"
-		swp Cargo.toml .arm
+		swp Cargo.toml .vendored_tls
 		swp Cargo.bak .toml
 	else
 		echo "Not resetting Cargo.toml"
@@ -16,7 +16,7 @@ function reset() {
 
 function setup() {
 	echo "Setting up Cargo.toml for arm build"
-	swp Cargo.toml .bak
+	swp Cargo.toml .vendored_tls
 	swp Cargo.arm .toml
 }
 
