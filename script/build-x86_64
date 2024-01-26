@@ -1,5 +1,11 @@
 #!/bin/bash
 
+source ./script/openssl-dep-tools.sh
+
+trap reset EXIT
+
+setup
+
 docker run --rm -v "$(pwd)":/home/rust/src messense/rust-musl-cross:x86_64-musl cargo build --release
 
 docker run --rm -v "$(pwd)":/home/rust/src messense/rust-musl-cross:x86_64-musl musl-strip /home/rust/src/target/x86_64-unknown-linux-musl/release/github-device-flow
