@@ -1,5 +1,11 @@
 #!/bin/bash
 
+source ./script/arm-tools.sh
+
+trap reset EXIT
+
+setup
+
 docker run --rm -v "$(pwd)":/home/rust/src messense/rust-musl-cross:armv7-musleabihf cargo build --release
 
 docker run --rm -v "$(pwd)":/home/rust/src messense/rust-musl-cross:armv7-musleabihf musl-strip /home/rust/src/target/armv7-unknown-linux-musleabihf/release/github-device-flow
