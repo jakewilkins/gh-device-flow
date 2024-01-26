@@ -16,7 +16,7 @@ function reset() {
 
 function setup() {
 	echo "Setting up Cargo.toml for arm build"
-	swp Cargo.toml .vendored_tls
-	swp Cargo.arm .toml
+	swp Cargo.toml .bak
+	swp Cargo.vendored_tls .toml
 }
 
