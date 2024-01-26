@@ -254,3 +254,44 @@ fn refresh_access_token(client_id: &str, refresh_token: &str, maybe_host: Option
         Ok(credential.clone())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{Credential};
+    use chrono::offset::Utc;
+    use chrono::{DateTime, Duration};
+
+    #[test]
+    fn credential_expiry_is_expired_returns_false_when_expiry_is_in_the_future() {
+        let expires_in = Duration::seconds(28800);
+        let mut expiry: DateTime<Utc> = Utc::now();
+        expiry = expiry + expires_in;
+        let calculated_expiry = expiry.to_rfc3339();
+
+        let credential = Credential {
+            token: String::from("irrelevant"),
+            expiry: calculated_expiry,
+            refresh_token: String::from("irrelevant"),
+        };
+
+        eprintln!("{:?}", credential);
+
+        assert_eq!(true, credential.is_expired());
+    }
+
+    #[test]
+    fn credential_expiry_is_expired_returns_true_when_expiry_is_in_the_past() {
+        let expires_in = Duration::seconds(42);
+        let mut expiry: DateTime<Utc> = Utc::now();
+        expiry = expiry - expires_in;
+        let calculated_expiry = expiry.to_rfc3339();
+
+        let credential = Credential {
+            token: String::from("irrelevant"),
+            expiry: calculated_expiry,
+            refresh_token: String::from("irrelevant"),
+        };
+
+        assert_eq!(true, credential.is_expired());
+    }
+}
