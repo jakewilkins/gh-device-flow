@@ -14,14 +14,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Cache
-      uses: actions/cache@v3.0.7
+      uses: actions/cache@v4.0.0
       with:
         path: |
           ~/.cargo/registry
           ~/.cargo/git
           target
         key: ${{ runner.os }}-1-cargo-${{ hashFiles('**/Cargo.lock') }}-${{ hashFiles('src/**.rs') }}
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4.1.1
     - name: Build x86_64 releases
       run: script/build-x86_64
     - name: Compress release assets
@@ -32,7 +32,7 @@ jobs:
           popd
           mv ./target/x86_64-unknown-linux-musl/release//gh-device-flow.x86_64-linux.zip .
     - name: Upload compiled artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4.3.1
       with:
         name: gh-device-flow.x86_64-linux.zip
         path: gh-device-flow.x86_64-linux.zip
@@ -40,14 +40,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Cache
-      uses: actions/cache@v3.0.7
+      uses: actions/cache@v4.0.0
       with:
         path: |
           ~/.cargo/registry
           ~/.cargo/git
           target
         key: ${{ runner.os }}-1-cargo-${{ hashFiles('**/Cargo.lock') }}-${{ hashFiles('src/**.rs') }}
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4.1.1
     - name: Build ARM releases
       run: script/build-arm
     - name: Compress release assets
@@ -58,7 +58,7 @@ jobs:
           popd
           mv ./target/arm-unknown-linux-musleabihf/release/gh-device-flow.arm-linux.zip .
     - name: Upload compiled artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4.3.1
       with:
         name: gh-device-flow.arm-linux.zip
         path: gh-device-flow.arm-linux.zip
@@ -66,14 +66,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Cache
-      uses: actions/cache@v3.0.7
+      uses: actions/cache@v4.0.0
       with:
         path: |
           ~/.cargo/registry
           ~/.cargo/git
           target
         key: ${{ runner.os }}-1-cargo-${{ hashFiles('**/Cargo.lock') }}-${{ hashFiles('src/**.rs') }}
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4.1.1
     - name: Build ARM releases
       run: script/build-armv7
     - name: Compress release assets
@@ -84,7 +84,7 @@ jobs:
           popd
           mv ./target/armv7-unknown-linux-musleabihf/release/gh-device-flow.armv7-linux.zip .
     - name: Upload compiled artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4.3.1
       with:
         name: gh-device-flow.armv7-linux.zip
         path: gh-device-flow.armv7-linux.zip
@@ -92,8 +92,8 @@ jobs:
     name: Build macos release
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@master
-      - uses: actions/cache@v2
+      - uses: actions/checkout@v4.1.1
+      - uses: actions/cache@v4.0.0
         id: cache-build
         with:
           path: |
@@ -134,7 +134,7 @@ jobs:
         run: |
           gon -log-level=debug -log-json ./.github/gon.json
       - name: Upload compiled artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4.3.1
         with:
           name: gh-device-flow.macos.zip
           path: gh-device-flow.macos.zip
@@ -145,7 +145,7 @@ jobs:
     steps:
     - name: Create release
       id: create_release
-      uses: actions/create-release@v1
+      uses: actions/create-release@v1.1.4
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
       with:
@@ -156,7 +156,7 @@ jobs:
           draft: false
           prerelease: false
     - name: Download all workflow run artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4.1.2
     - name: Upload Release Asset x86_64
       uses: actions/upload-release-asset@v1
       env:
