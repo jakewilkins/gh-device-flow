@@ -21,7 +21,7 @@ jobs:
           ~/.cargo/git
           target
         key: ${{ runner.os }}-1-cargo-${{ hashFiles('**/Cargo.lock') }}-${{ hashFiles('src/**.rs') }}
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Build x86_64 releases
       run: script/build-x86_64
     - name: Compress release assets
@@ -32,7 +32,7 @@ jobs:
           popd
           mv ./target/x86_64-unknown-linux-musl/release//gh-device-flow.x86_64-linux.zip .
     - name: Upload compiled artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: gh-device-flow.x86_64-linux.zip
         path: gh-device-flow.x86_64-linux.zip
@@ -47,7 +47,7 @@ jobs:
           ~/.cargo/git
           target
         key: ${{ runner.os }}-1-cargo-${{ hashFiles('**/Cargo.lock') }}-${{ hashFiles('src/**.rs') }}
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Build ARM releases
       run: script/build-arm
     - name: Compress release assets
@@ -58,7 +58,7 @@ jobs:
           popd
           mv ./target/arm-unknown-linux-musleabihf/release/gh-device-flow.arm-linux.zip .
     - name: Upload compiled artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: gh-device-flow.arm-linux.zip
         path: gh-device-flow.arm-linux.zip
@@ -73,7 +73,7 @@ jobs:
           ~/.cargo/git
           target
         key: ${{ runner.os }}-1-cargo-${{ hashFiles('**/Cargo.lock') }}-${{ hashFiles('src/**.rs') }}
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Build ARM releases
       run: script/build-armv7
     - name: Compress release assets
@@ -84,7 +84,7 @@ jobs:
           popd
           mv ./target/armv7-unknown-linux-musleabihf/release/gh-device-flow.armv7-linux.zip .
     - name: Upload compiled artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: gh-device-flow.armv7-linux.zip
         path: gh-device-flow.armv7-linux.zip
@@ -92,7 +92,7 @@ jobs:
     name: Build macos release
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v4
       - uses: actions/cache@v4
         id: cache-build
         with:
@@ -113,7 +113,7 @@ jobs:
           command: build
           args: --release
       - name: Import Code-Signing Certificates
-        uses: Apple-Actions/import-codesign-certs@v1
+        uses: Apple-Actions/import-codesign-certs@v3
         with:
           # The certificates in a PKCS12 file encoded as a base64 string
           p12-file-base64: ${{ secrets.MACOS_CERTIFICATE }}
@@ -134,7 +134,7 @@ jobs:
         run: |
           gon -log-level=debug -log-json ./.github/gon.json
       - name: Upload compiled artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: gh-device-flow.macos.zip
           path: gh-device-flow.macos.zip
@@ -156,7 +156,7 @@ jobs:
           draft: false
           prerelease: false
     - name: Download all workflow run artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
     - name: Upload Release Asset x86_64
       uses: actions/upload-release-asset@v1
       env:
