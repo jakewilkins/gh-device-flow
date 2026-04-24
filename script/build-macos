@@ -55,7 +55,7 @@ function create_macos_artifact {
 }
 
 case $1 in
-	"macos")
+	"actions")
 		build_macos
 		create_macos_artifact
 		;;

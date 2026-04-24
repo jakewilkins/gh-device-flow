@@ -123,7 +123,7 @@ jobs:
           AC_PASSWORD: ${{ secrets.AC_PASSWORD }}
           AC_PROVIDER: ${{ secrets.AC_PROVIDER }}
         run: |
-          script/build-macos
+          script/build-macos actions
       - name: Upload compiled artifact
         uses: actions/upload-artifact@v6
         with:
