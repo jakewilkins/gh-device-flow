@@ -15,7 +15,7 @@ struct Args {
    client_id: String,
 
    /// The host to authenticate with
-   #[clap(short, long, value_parser)]
+   #[clap(short = 'o', long, value_parser)]
    host: Option<String>,
 
    /// The scope the user wants to have
