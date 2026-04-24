@@ -11,6 +11,9 @@ on:
       - .github/workflows/build.yml
       - src/*
 
+permissions:
+  contents: read
+
 env:
   CARGO_TERM_COLOR: always
 
@@ -131,6 +134,8 @@ jobs:
           path: github-device-flow.macos.zip
 
   create_release:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     needs: [build_arm, build_armv7, build_macos, build_x86_64]
     if: github.ref == 'refs/heads/main'
