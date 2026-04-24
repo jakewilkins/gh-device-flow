@@ -5,6 +5,11 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+    paths:
+      - Cargo.*
+      - .github/*
+      - .github/workflows/build.yml
+      - src/*
 
 env:
   CARGO_TERM_COLOR: always
@@ -36,6 +41,7 @@ jobs:
       with:
         name: gh-device-flow.x86_64-linux.zip
         path: gh-device-flow.x86_64-linux.zip
+
   build_arm:
     runs-on: ubuntu-latest
     steps:
@@ -62,6 +68,7 @@ jobs:
       with:
         name: gh-device-flow.arm-linux.zip
         path: gh-device-flow.arm-linux.zip
+
   build_armv7:
     runs-on: ubuntu-latest
     steps:
@@ -88,6 +95,7 @@ jobs:
       with:
         name: gh-device-flow.armv7-linux.zip
         path: gh-device-flow.armv7-linux.zip
+
   build_macos:
     name: Build macos release
     runs-on: macos-latest
@@ -101,17 +109,6 @@ jobs:
             ~/.cargo/git
             target
           key: ${{ runner.os }}-macos-1-cargo-${{ hashFiles('**/Cargo.lock') }}-${{ hashFiles('src/**.rs') }}
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          target: x86_64-apple-darwin
-          override: true
-      - name: Build release
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --release
       - name: Import Code-Signing Certificates
         uses: Apple-Actions/import-codesign-certs@v7
         with:
@@ -119,25 +116,20 @@ jobs:
           p12-file-base64: ${{ secrets.MACOS_CERTIFICATE }}
           # The password used to import the PKCS12 file.
           p12-password: ${{ secrets.MACOS_CERTIFICATE_PW }}
-
-      - name: Install gon via HomeBrew for code signing and app notarization
-        run: |
-          brew install Bearer/tap/gon
-      - name: Move asset
-        run: |
-            mv ./target/release/github-device-flow .
-      - name: Sign the mac binaries with Gon
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Build and sign release
         env:
           AC_USERNAME: ${{ secrets.AC_USERNAME }}
           AC_PASSWORD: ${{ secrets.AC_PASSWORD }}
           AC_PROVIDER: ${{ secrets.AC_PROVIDER }}
         run: |
-          gon -log-level=debug -log-json ./.github/gon.json
+          script/build-macos
       - name: Upload compiled artifact
         uses: actions/upload-artifact@v6
         with:
-          name: gh-device-flow.macos.zip
-          path: gh-device-flow.macos.zip
+          name: github-device-flow.macos.zip
+          path: github-device-flow.macos.zip
+
   create_release:
     runs-on: ubuntu-latest
     needs: [build_arm, build_armv7, build_macos, build_x86_64]

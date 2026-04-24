@@ -1,0 +1,74 @@
+#!/bin/bash
+BIN_NAME=github-device-flow
+
+function usage {
+		echo "Usage: $0 <subcommand>"
+		exit 1
+}
+
+if [ $# -ne 1 ]; then
+		usage
+fi
+
+function is_macos {
+	system=$(uname -s)
+	if [ "$system" == "Darwin" ]; then
+		return 0
+	else
+		return 1
+	fi
+}
+
+function build_macos {
+	if is_macos; then
+		cargo build --release
+	else
+		echo "This command must be run on macOS"
+	fi
+}
+
+function create_macos_artifact {
+	if is_macos; then
+		[ -d macos-notarize ] && rm -rf macos-notarize
+		mkdir -p macos-notarize
+		cp target/release/$BIN_NAME macos-notarize
+		pushd macos-notarize
+
+		# Notary code from https://developer.apple.com/documentation/security/customizing-the-notarization-workflow
+		codesign --timestamp --options=runtime -s "9878A293D854126F7FA671B065890283793CD152" $BIN_NAME
+
+		zip -9 $BIN_NAME.macos.zip $BIN_NAME
+
+		if [ -z "$AC_USERNAME" ]; then
+			xcrun notarytool submit $BIN_NAME.macos.zip --keychain-profile "notarytool-password" --wait
+		else
+			xcrun notarytool submit $BIN_NAME.macos.zip --apple-id "$AC_USERNAME" --team-id "$AC_PROVIDER" --password "$AC_PASSWORD" --wait
+		fi
+
+		popd
+
+		[ -f macos-notarize/$BIN_NAME.macos.zip ] && mv macos-notarize/$BIN_NAME.macos.zip .
+		[ -d macos-notarize ] && rm -rf macos-notarize
+	else
+		echo "This command must be run on macOS"
+	fi
+}
+
+case $1 in
+	"macos")
+		build_macos
+		create_macos_artifact
+		;;
+	"local-release")
+		create_release
+		;;
+	"local-build")
+		local_build
+		;;
+	"notarize-macos")
+		create_macos_artifact
+		;;
+	*)
+		usage
+		;;
+esac

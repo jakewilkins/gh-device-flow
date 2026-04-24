@@ -1,0 +1,127 @@
+#!/bin/bash
+
+BIN_NAME=github-device-flow
+
+function usage {
+		echo "Usage: $0 <subcommand>"
+		exit 1
+}
+
+if [ $# -ne 1 ]; then
+		usage
+fi
+
+function build_x86_64 {
+  docker run --rm -v "$(pwd)":/home/rust/src messense/rust-musl-cross:x86_64-musl cargo build --release
+	docker run --rm -v "$(pwd)":/home/rust/src messense/rust-musl-cross:x86_64-musl musl-strip /home/rust/src/target/x86_64-unknown-linux-musl/release/$BIN_NAME
+}
+
+function build_arm {
+	docker run --rm -v "$(pwd)":/home/rust/src messense/rust-musl-cross:arm-musleabihf cargo build --release
+	docker run --rm -v "$(pwd)":/home/rust/src messense/rust-musl-cross:arm-musleabihf musl-strip /home/rust/src/target/arm-unknown-linux-musleabihf/release/$BIN_NAME
+}
+
+function build_armv7 {
+	docker run --rm -v "$(pwd)":/home/rust/src messense/rust-musl-cross:armv7-musleabihf cargo build --release
+	docker run --rm -v "$(pwd)":/home/rust/src messense/rust-musl-cross:armv7-musleabihf musl-strip /home/rust/src/target/armv7-unknown-linux-musleabihf/release/$BIN_NAME
+}
+
+function create_linux_release_artifact {
+	[ -d linux-release ] && rm -rf linux-release
+	mkdir -p linux-release
+
+	sudo chown -R runner:docker ./target
+
+	if [ "$1" == "x86_64-linux" ]; then
+		cp target/x86_64-unknown-linux-musl/release/$BIN_NAME linux-release
+	elif [ "$1" == "arm-linux" ]; then
+		cp target/arm-unknown-linux-musleabihf/release/$BIN_NAME linux-release
+	elif [ "$1" == "armv7-linux" ]; then
+		cp target/armv7-unknown-linux-musleabihf/release/$BIN_NAME
+	fi
+	pushd linux-release
+
+	zip -9 $BIN_NAME.$1.zip $BIN_NAME
+
+	popd
+
+	[ -f linux-release/$BIN_NAME.$1.zip ] && mv linux-release/$BIN_NAME.$1.zip .
+	[ -d linux-release ] && rm -rf linux-release
+}
+
+function build_macos {
+	if is_macos; then
+		cargo build --release
+	else
+		echo "This command must be run on macOS"
+	fi
+}
+
+function local_build {
+	build_x86_64
+	build_arm
+	build_armv7
+	build_macos
+}
+
+function create_release {
+	current_tag=$(git tag --points-at HEAD)
+	current_release_tag=$(gh release list --json tagName --limit 1 -q '.[0].tagName')
+
+	if [ "$current_tag" != "$current_release_tag" ]; then
+		echo "Creating release $current_tag"
+	else
+		echo "Release $current_tag already exists"
+		return 1
+	fi
+
+	if [ -z "$current_tag" ]; then
+		echo "No tag found"
+
+		new_tag=$(echo ${current_release_tag} | awk -F. -v OFS=. '{$NF += 1 ; print}')
+
+		if [ -t 0 ]; then
+			read -p "Enter new tag, leave empty for $new_tag or n to exit " new_tag
+		else
+			new_tag="n"
+		fi
+		if [ "$new_tag" == "n" ]; then
+			exit 1
+		fi
+
+		git tag $new_tag
+	fi
+
+	gh release create $new_tag --notes "Release $new_tag"
+}
+
+case $1 in
+	"x86_64")
+		build_x86_64
+		create_linux_release_artifact x86_64-linux
+		;;
+	"arm")
+		build_arm
+		create_linux_release_artifact arm-linux
+		;;
+	"armv7")
+		build_armv7
+		create_linux_release_artifact armv7-linux
+		;;
+	"macos")
+		build_macos
+		create_macos_artifact
+		;;
+	"local-release")
+		create_release
+		;;
+	"local-build")
+		local_build
+		;;
+	"notarize-macos")
+		create_macos_artifact
+		;;
+	*)
+		usage
+		;;
+esac
