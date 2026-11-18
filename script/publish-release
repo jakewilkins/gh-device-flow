@@ -2,6 +2,7 @@
 set -euo pipefail
 
 CARGO_TOML="Cargo.toml"
+VENDORED_TOML="Cargo.vendored_tls"
 
 SUCCEEDED="false"
 COMMITTED="false"
@@ -23,7 +24,7 @@ function abort_if_failed {
 		if [[ "$EDITED" == "true" ]]; then
 			if ! git diff --quiet || ! git diff --cached --quiet; then
 				echo "undoing edits"
-				git checkout -- Cargo.lock Cargo.toml
+				git checkout -- Cargo.lock Cargo.toml Cargo.vendored_tls
 			fi
 		fi
 	else
@@ -88,6 +89,10 @@ sed -i '' "s/^version = \"$CURRENT_VERSION\"/version = \"$NEW_VERSION\"/" "$CARG
 EDITED="true"
 echo "Updated $CARGO_TOML to $NEW_VERSION"
 
+# Keep the vendored-TLS manifest (swapped in for ARM builds) on the same version
+sed -i '' "1,/^version = /s/^version = \".*\"/version = \"$NEW_VERSION\"/" "$VENDORED_TOML"
+echo "Updated $VENDORED_TOML to $NEW_VERSION"
+
 # Let cargo update the lockfile
 cargo check --quiet 2>/dev/null
 
@@ -102,7 +107,7 @@ echo "Build succeeded."
 # echo "Dry-run succeeded."
 
 # Commit the version bump
-git add Cargo.toml Cargo.lock
+git add Cargo.toml Cargo.lock Cargo.vendored_tls
 git commit -m "Bump version to $NEW_VERSION"
 COMMITTED="true"
 git tag "v$NEW_VERSION"
