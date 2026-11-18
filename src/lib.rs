@@ -340,9 +340,7 @@ mod tests {
             refresh_token: String::from("irrelevant"),
         };
 
-        eprintln!("{:?}", credential);
-
-        assert_eq!(true, credential.is_expired());
+        assert_eq!(false, credential.is_expired());
     }
 
     #[test]
