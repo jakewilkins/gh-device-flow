@@ -115,9 +115,9 @@ TAGGED="true"
 echo "Committed version bump."
 
 # Publish to crates.io
-# echo "Publishing to crates.io..."
-# cargo publish
-# echo "Published github-device-flow v$NEW_VERSION to crates.io."
+echo "Publishing to crates.io..."
+cargo publish
+echo "Published github-device-flow v$NEW_VERSION to crates.io."
 
 # Push the commit
 git push
