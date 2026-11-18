@@ -268,7 +268,7 @@ impl DeviceFlow {
         iterations: u32,
     ) -> Result<Option<time::Duration>, DeviceFlowError> {
         if let DeviceFlowState::Processing(interval) = self.state {
-            if count == iterations {
+            if count + 1 == iterations {
                 return Err(util::credential_error("Max poll iterations reached".into()));
             }
             Ok(Some(interval))
@@ -422,6 +422,17 @@ mod tests {
         flow.apply_poll_response(Ok(response(&[("error", "authorization_pending".into())])));
 
         assert_eq!(flow.next_interval(0, 20).unwrap(), Some(crate::FIVE_SECONDS));
+    }
+
+    #[test]
+    fn next_interval_errors_after_last_iteration() {
+        let flow = processing_flow();
+
+        assert_eq!(flow.next_interval(18, 20).unwrap(), Some(crate::FIVE_SECONDS));
+        assert!(matches!(
+            flow.next_interval(19, 20),
+            Err(crate::DeviceFlowError::GitHubError(msg)) if msg == "Max poll iterations reached"
+        ));
     }
 
     #[test]
