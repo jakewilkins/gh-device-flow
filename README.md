@@ -43,3 +43,25 @@ OPTIONS:
     -s, --scope <SCOPE>            The scope required for the auth app
     -V, --version                  Print version information
 ```
+
+## Library usage
+
+By default the crate uses `reqwest`'s blocking client:
+
+```rust
+let cred = github_device_flow::authorize("Iv1.8675309ABCDEFGH".into(), None, None)?;
+```
+
+For async code, enable the `async` feature (requires a Tokio runtime). Add
+`default-features = false` if you don't also want the blocking API:
+
+```toml
+github-device-flow = { version = "0.2", default-features = false, features = ["async"] }
+```
+
+```rust
+let cred = github_device_flow::nonblocking::authorize("Iv1.8675309ABCDEFGH".into(), None, None).await?;
+```
+
+`DeviceFlow` also has `start_async`, `setup_async`, `update_async` and `poll_async`
+alongside the blocking `start`, `setup`, `update` and `poll`. See `examples/async.rs`.

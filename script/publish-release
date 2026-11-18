@@ -2,6 +2,37 @@
 set -euo pipefail
 
 CARGO_TOML="Cargo.toml"
+VENDORED_TOML="Cargo.vendored_tls"
+
+SUCCEEDED="false"
+COMMITTED="false"
+EDITED="false"
+TAGGED="false"
+
+function abort_if_failed {
+	if [[ "$SUCCEEDED" == "false" ]]; then
+		if [[ "$TAGGED" == "true" ]]; then
+			echo "undoing tag"
+			git tag -d "v$NEW_VERSION"
+		fi
+
+		if [[ "$COMMITTED" == "true" ]]; then
+			echo "undoing commit"
+			git reset HEAD~1
+		fi
+
+		if [[ "$EDITED" == "true" ]]; then
+			if ! git diff --quiet || ! git diff --cached --quiet; then
+				echo "undoing edits"
+				git checkout -- Cargo.lock Cargo.toml Cargo.vendored_tls
+			fi
+		fi
+	else
+		echo "nice"
+	fi
+}
+
+trap abort_if_failed EXIT
 
 function usage {
 	echo "Usage: $0 <new-version>"
@@ -24,6 +55,19 @@ if ! echo "$NEW_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
 	exit 1
 fi
 
+# Releases must be cut from an up-to-date main, since pushing the tag triggers the release build.
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+if [ "$CURRENT_BRANCH" != "main" ]; then
+	echo "Error: releases must be published from main (currently on $CURRENT_BRANCH)"
+	exit 1
+fi
+
+git fetch --quiet origin main
+if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
+	echo "Error: local main is not in sync with origin/main; pull or push first"
+	exit 1
+fi
+
 CURRENT_VERSION=$(grep '^version' "$CARGO_TOML" | head -1 | sed 's/.*"\(.*\)"/\1/')
 echo "Current version: $CURRENT_VERSION"
 echo "New version:     $NEW_VERSION"
@@ -42,7 +86,12 @@ fi
 
 # Bump version in Cargo.toml
 sed -i '' "s/^version = \"$CURRENT_VERSION\"/version = \"$NEW_VERSION\"/" "$CARGO_TOML"
+EDITED="true"
 echo "Updated $CARGO_TOML to $NEW_VERSION"
+
+# Keep the vendored-TLS manifest (swapped in for ARM builds) on the same version
+sed -i '' "1,/^version = /s/^version = \".*\"/version = \"$NEW_VERSION\"/" "$VENDORED_TOML"
+echo "Updated $VENDORED_TOML to $NEW_VERSION"
 
 # Let cargo update the lockfile
 cargo check --quiet 2>/dev/null
@@ -53,22 +102,27 @@ cargo build --quiet
 echo "Build succeeded."
 
 # Dry-run publish
-echo "Running publish dry-run..."
-cargo publish --dry-run --allow-dirty --quiet
-echo "Dry-run succeeded."
+# echo "Running publish dry-run..."
+# cargo publish --dry-run --allow-dirty --quiet
+# echo "Dry-run succeeded."
 
 # Commit the version bump
-git add Cargo.toml Cargo.lock
-git commit -S -m "Bump version to $NEW_VERSION"
+git add Cargo.toml Cargo.lock Cargo.vendored_tls
+git commit -m "Bump version to $NEW_VERSION"
+COMMITTED="true"
+git tag "v$NEW_VERSION"
+TAGGED="true"
 echo "Committed version bump."
 
 # Publish to crates.io
-echo "Publishing to crates.io..."
-cargo publish
-echo "Published github-device-flow v$NEW_VERSION to crates.io."
+# echo "Publishing to crates.io..."
+# cargo publish
+# echo "Published github-device-flow v$NEW_VERSION to crates.io."
 
 # Push the commit
 git push
+git push --tags
+SUCCEEDED=true
 echo "Pushed to remote."
 
 echo ""
